@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 
 function ToyForm({ onAddToy }) {
+  const [errors, setErrors] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     image: "",
@@ -13,7 +14,7 @@ function ToyForm({ onAddToy }) {
     });
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     const newToy = {
@@ -21,21 +22,24 @@ function ToyForm({ onAddToy }) {
       likes: 0,
     };
 
-    fetch("/toys", {
+    const response = await fetch("/toys", {
       method: "POST",
+      credentials: "same-origin",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(newToy),
-    })
-      .then((r) => r.json())
-      .then((newToy) => {
-        setFormData({
-          name: "",
-          image: "",
-        });
-        onAddToy(newToy);
+    });
+    const data = await response.json();
+    if (response.ok) {
+      setFormData({
+        name: "",
+        image: "",
       });
+      onAddToy(data);
+    } else {
+      setErrors((errors) => [...errors, data.error]);
+    }
   }
 
   return (
@@ -59,6 +63,15 @@ function ToyForm({ onAddToy }) {
           placeholder="Enter a toy's image URL..."
           className="input-text"
         />
+        {errors.length > 0 && (
+          <ul
+            style={{ color: "yellow", fontWeight: "bold", listStyle: "none" }}
+          >
+            {errors.map((error) => (
+              <li key={Math.random()}>{error}</li>
+            ))}
+          </ul>
+        )}
         <br />
         <input
           type="submit"
